@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"os"
-	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -82,9 +81,6 @@ type Impersonation struct {
 	Delegates            []string `yaml:"delegates" json:"delegates,omitempty"`
 	Lifetime             string   `yaml:"lifetime" json:"lifetime,omitempty"`
 }
-
-var envReference = regexp.MustCompile(`^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$`)
-var serviceAccountEmail = regexp.MustCompile(`^[^@\s]+@[^@\s]+\.iam\.gserviceaccount\.com$`)
 
 func Load(path string, knownResources []string) (*Config, error) {
 	b, err := os.ReadFile(path)
@@ -199,17 +195,33 @@ func (c *Config) resolveCredentials() error {
 		if p.Access.Credentials == "" {
 			continue
 		}
-		matches := envReference.FindStringSubmatch(p.Access.Credentials)
-		if matches == nil {
+		name, ok := environmentReferenceName(p.Access.Credentials)
+		if !ok {
 			return fmt.Errorf("project %q access.credentials must be an environment reference such as ${GCME_CREDENTIALS}", p.Name)
 		}
-		value, ok := os.LookupEnv(matches[1])
+		value, ok := os.LookupEnv(name)
 		if !ok || strings.TrimSpace(value) == "" {
 			return fmt.Errorf("project %q access.credentials references an unset or empty environment variable", p.Name)
 		}
 		p.Access.Credentials = value
 	}
 	return nil
+}
+
+func environmentReferenceName(value string) (string, bool) {
+	if !strings.HasPrefix(value, "${") || !strings.HasSuffix(value, "}") || len(value) < 4 {
+		return "", false
+	}
+	name := value[2 : len(value)-1]
+	for i := range name {
+		ch := name[i]
+		isLetter := ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z'
+		isDigit := ch >= '0' && ch <= '9'
+		if (i == 0 && !isLetter && ch != '_') || (i > 0 && !isLetter && !isDigit && ch != '_') {
+			return "", false
+		}
+	}
+	return name, true
 }
 
 func hasBillingConfig(b Billing) bool {
@@ -240,11 +252,11 @@ func validateAccess(project string, access Access) error {
 		return nil
 	}
 	impersonation := access.Impersonation
-	if !serviceAccountEmail.MatchString(impersonation.TargetServiceAccount) {
+	if !isServiceAccountEmail(impersonation.TargetServiceAccount) {
 		return fmt.Errorf("project %q access.impersonation.target_service_account must be a service account email", project)
 	}
 	for _, delegate := range impersonation.Delegates {
-		if !serviceAccountEmail.MatchString(delegate) {
+		if !isServiceAccountEmail(delegate) {
 			return fmt.Errorf("project %q access.impersonation.delegates must contain service account emails", project)
 		}
 	}
@@ -256,6 +268,19 @@ func validateAccess(project string, access Access) error {
 		return fmt.Errorf("project %q access.impersonation.lifetime must be greater than zero and at most 1h", project)
 	}
 	return nil
+}
+
+func isServiceAccountEmail(value string) bool {
+	if strings.ContainsAny(value, " \t\r\n") {
+		return false
+	}
+	at := strings.IndexByte(value, '@')
+	if at <= 0 || at != strings.LastIndexByte(value, '@') {
+		return false
+	}
+	const domainSuffix = ".iam.gserviceaccount.com"
+	domain := value[at+1:]
+	return len(domain) > len(domainSuffix) && strings.HasSuffix(domain, domainSuffix)
 }
 
 func (c *Config) Project(name string) (Project, bool) {

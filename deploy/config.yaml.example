@@ -26,6 +26,12 @@ projects:
       table: billing-project.billing_dataset.gcp_billing_export_v1_ABCDEF_123456
       group_by_service: false
       group_by_cost_type: false
-    # Omit access to use Application Default Credentials. To use a separate
-    # identity, set access.credentials to "${GCME_PRODUCTION_CREDENTIALS}";
-    # the environment variable holds credential JSON, not a filename.
+    access:
+      # Leave credentials unset to use Application Default Credentials. To use
+      # a separate identity, uncomment the exact environment reference below;
+      # the environment value must be credential JSON, not a filename.
+      # credentials: "${GCME_PRODUCTION_CREDENTIALS}"
+      # impersonation:
+      #   target_service_account: exporter-reader@target-project-id.iam.gserviceaccount.com
+      #   delegates: []
+      #   lifetime: 1h

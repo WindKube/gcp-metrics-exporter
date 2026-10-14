@@ -192,3 +192,34 @@ projects:
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
+func TestEnvironmentReferenceName(t *testing.T) {
+	for _, test := range []struct {
+		value string
+		name  string
+		valid bool
+	}{
+		{value: "${GCME_CREDENTIALS}", name: "GCME_CREDENTIALS", valid: true},
+		{value: "${_GCME_2}", name: "_GCME_2", valid: true},
+		{value: "GCME_CREDENTIALS"},
+		{value: "${2GCME}"},
+		{value: "${GCME-NAME}"},
+		{value: "${}"},
+	} {
+		name, valid := environmentReferenceName(test.value)
+		if name != test.name || valid != test.valid {
+			t.Fatalf("environmentReferenceName(%q) = (%q, %t), want (%q, %t)", test.value, name, valid, test.name, test.valid)
+		}
+	}
+}
+
+func TestIsServiceAccountEmail(t *testing.T) {
+	if !isServiceAccountEmail("exporter@target-project.iam.gserviceaccount.com") {
+		t.Fatal("expected valid service account email")
+	}
+	for _, value := range []string{"", "exporter@example.com", "exporter@@target.iam.gserviceaccount.com", "exporter @target.iam.gserviceaccount.com"} {
+		if isServiceAccountEmail(value) {
+			t.Fatalf("accepted invalid service account email %q", value)
+		}
+	}
+}
