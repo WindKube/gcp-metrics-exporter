@@ -28,10 +28,20 @@ terraform init
 terraform apply
 ```
 
-Attach the emitted `service_account_email` to the workload running the exporter.
-For example, on GKE, map this Google service account to the Kubernetes service
-account through Workload Identity. Do not create a service-account key: the
-exporter already uses Application Default Credentials.
+Terraform also creates a service-account key for the exporter. Write the
+sensitive `service_account_key` output to a JSON file and set `GCME_ADC_FILE`
+to its absolute path before starting the Docker Compose deployment:
+
+```bash
+terraform output -raw service_account_key > gcp-metrics-exporter.json
+export GCME_ADC_FILE="$PWD/gcp-metrics-exporter.json"
+```
+
+The exporter reads this JSON file as Application Default Credentials through
+`GOOGLE_APPLICATION_CREDENTIALS`. Keep it out of version control and store it
+in a secret manager for production deployments. Rotate it by replacing the
+Terraform-managed key when required. The private key is also stored in
+Terraform state, so use encrypted state with tightly restricted access.
 
 List the same target projects in the exporter configuration:
 

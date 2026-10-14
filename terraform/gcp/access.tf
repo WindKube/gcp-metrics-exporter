@@ -5,6 +5,10 @@ resource "google_service_account" "exporter" {
   description  = "Read-only identity used by gcp-metrics-exporter to inventory Cloud Run resources."
 }
 
+resource "google_service_account_key" "exporter" {
+  service_account_id = google_service_account.exporter.name
+}
+
 # This non-authoritative resource preserves the rest of each project's IAM
 # policy. Cloud Run Viewer includes the service, revision, and worker-pool list
 # permissions used by the exporter.

@@ -7,3 +7,9 @@ output "service_account_member" {
   description = "IAM member identifier of the exporter service account."
   value       = "serviceAccount:${google_service_account.exporter.email}"
 }
+
+output "service_account_key" {
+  description = "Service account credential JSON to provide to the exporter."
+  value       = base64decode(google_service_account_key.exporter.private_key)
+  sensitive   = true
+}
