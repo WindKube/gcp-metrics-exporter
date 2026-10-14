@@ -1,0 +1,20 @@
+{
+  "properties": {
+    "@timestamp": { "type": "date" },
+    "resource": {
+      "properties": {
+        "type": { "type": "keyword" },
+        "id": { "type": "keyword" },
+        "name": { "type": "keyword" }
+      }
+    },
+    "cloud": {
+      "properties": {
+        "provider": { "type": "keyword" },
+        "project": { "type": "keyword" },
+        "location": { "type": "keyword" }
+      }
+    },
+    "gcp": { "type": "flattened" }
+  }
+}
