@@ -25,14 +25,12 @@ The versioned GoogleSQL sources are in [`internal/queries/queries`](internal/que
 
 ## Local Docker Compose
 
-`deploy/docker-compose.yml` starts PostgreSQL, Temporal, Elasticsearch, and the exporter, and applies the included Elasticsearch index template. Copy `deploy/config.yaml.example` to `deploy/config.yaml`, update the BigQuery identifiers, then point `GCME_ADC_FILE` at an Application Default Credentials JSON file:
+`deploy/infra.yaml` defines PostgreSQL, Temporal, and Elasticsearch. The exporter is defined separately in `deploy/compose.yml`. Apply the [`terraform/elasticsearch`](terraform/elasticsearch) index template before starting the exporter. Copy `deploy/config.yaml.example` to `deploy/config.yaml`, update the BigQuery identifiers, then point `GCME_ADC_FILE` at an Application Default Credentials JSON file:
 
 ```bash
 cp deploy/config.yaml.example deploy/config.yaml
-GCME_ADC_FILE="$HOME/.config/gcloud/application_default_credentials.json" docker compose -f deploy/docker-compose.yml up --build
+GCME_ADC_FILE="$HOME/.config/gcloud/application_default_credentials.json" docker compose -f deploy/infra.yaml -f deploy/compose.yml up --build
 ```
-
-The Elasticsearch template in `deploy/elasticsearch-index-template.json` uses the default `gcp-inventory-*` index pattern. Adjust its pattern when you set a different `storage.elasticsearch.index_prefix`.
 
 ## Running
 
