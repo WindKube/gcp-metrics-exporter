@@ -1,0 +1,18 @@
+version: '3'
+
+env:
+  GCME_CONFIG: configs/example.yaml
+
+tasks:
+  build:
+    cmds: [go build -o bin/gcp-metrics-exporter .]
+  test:
+    cmds: [go test -race ./...]
+  lint:
+    cmds: [go vet ./...]
+  config:
+    cmds: [go run . config validate --config '{{.GCME_CONFIG}}']
+  worker:
+    cmds: [go run . worker --config '{{.GCME_CONFIG}}']
+  schedules:
+    cmds: [go run . schedule list --config '{{.GCME_CONFIG}}']

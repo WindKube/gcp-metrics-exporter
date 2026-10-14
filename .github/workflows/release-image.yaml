@@ -1,0 +1,41 @@
+name: Release image
+on:
+  workflow_call:
+    inputs:
+      tag: {required: true, type: string}
+permissions: {}
+env:
+  IMAGE: ghcr.io/windkube/gcp-metrics-exporter
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - id: build
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ env.IMAGE }}:${{ inputs.tag }}
+          build-args: VERSION=${{ inputs.tag }}
+          provenance: true
+      - uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+      - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
+      - run: cosign sign --yes ${{ env.IMAGE }}@${{ steps.build.outputs.digest }}

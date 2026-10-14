@@ -1,0 +1,14 @@
+name: Security
+on: [pull_request, workflow_dispatch]
+permissions: {}
+jobs:
+  dependencies:
+    runs-on: ubuntu-24.04
+    permissions: {contents: read, security-events: write}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: aquasecurity/trivy-action@c03d123cb480c08c69b054af418ea5e69fe6e57e # master
+        with: {scan-type: fs, scan-ref: ., format: sarif, output: trivy.sarif, severity: CRITICAL,HIGH,MEDIUM, ignore-unfixed: true}
+      - uses: github/codeql-action/upload-sarif@9f759ee644a3e7c15c1390abf49868036c00067b # v3
+        if: always()
+        with: {sarif_file: trivy.sarif}
