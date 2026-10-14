@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/bigquery v1.85.0
 	github.com/go-playground/validator/v10 v10.30.5
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/rs/zerolog v1.34.0
+	github.com/rs/zerolog v1.35.1
 	github.com/spf13/cobra v1.9.1
 	go.temporal.io/api v1.49.1
 	go.temporal.io/sdk v1.35.0
@@ -44,8 +44,8 @@ require (
 	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/leodido/go-urn v1.5.0 // indirect
-	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.19 // indirect
+	github.com/mattn/go-colorable v0.1.14 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/nexus-rpc/sdk-go v0.3.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.18 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
