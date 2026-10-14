@@ -39,30 +39,6 @@ services:
       retries: 30
     volumes: [elasticsearch-data:/usr/share/elasticsearch/data]
 
-  elasticsearch-template:
-    image: curlimages/curl:8.12.1
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
-    volumes:
-      - ./elasticsearch-index-template.json:/template.json:ro
-    command: ["-fsS", "-X", "PUT", "http://elasticsearch:9200/_index_template/gcp-metrics-exporter", "-H", "Content-Type: application/json", "--data-binary", "@/template.json"]
-
-  exporter:
-    build:
-      context: ..
-      dockerfile: Dockerfile
-    depends_on:
-      temporal:
-        condition: service_started
-      elasticsearch-template:
-        condition: service_completed_successfully
-    environment:
-      GOOGLE_APPLICATION_CREDENTIALS: /gcp/adc.json
-    volumes:
-      - ./config.yaml:/app/config.yaml:ro
-      - ${GCME_ADC_FILE:?Set GCME_ADC_FILE to your Application Default Credentials JSON}:/gcp/adc.json:ro
-
 volumes:
   postgres-data:
   elasticsearch-data:

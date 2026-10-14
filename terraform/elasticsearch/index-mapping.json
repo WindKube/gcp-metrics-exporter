@@ -1,4 +1,5 @@
 {
+  "dynamic": true,
   "properties": {
     "@timestamp": { "type": "date" },
     "resource": {
@@ -15,6 +16,14 @@
         "location": { "type": "keyword" }
       }
     },
-    "gcp": { "type": "flattened" }
+    "gcp": {
+      "properties": {
+        "billing_month": { "type": "keyword" },
+        "service": { "type": "keyword" },
+        "cost_type": { "type": "keyword" },
+        "cost": { "type": "double" },
+        "currency": { "type": "keyword" }
+      }
+    }
   }
 }

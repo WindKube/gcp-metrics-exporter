@@ -1,0 +1,15 @@
+services:
+  exporter:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    depends_on:
+      temporal:
+        condition: service_started
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /gcp/adc.json
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - ${GCME_ADC_FILE:?Set GCME_ADC_FILE to your Application Default Credentials JSON}:/gcp/adc.json:ro
