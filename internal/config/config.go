@@ -7,12 +7,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/robfig/cron/v3"
 	"github.com/windkube/gcp-metrics-exporter/internal/queries"
 	"gopkg.in/yaml.v3"
 )
 
 const DefaultSchedule = "0 * * * *"
+
+var emailValidator = validator.New()
 
 type Config struct {
 	Global    Global    `yaml:"global" json:"global"`
@@ -195,8 +198,9 @@ func (c *Config) resolveCredentials() error {
 		if p.Access.Credentials == "" {
 			continue
 		}
-		name, ok := environmentReferenceName(p.Access.Credentials)
-		if !ok {
+		name, hasPrefix := strings.CutPrefix(p.Access.Credentials, "${")
+		name, hasSuffix := strings.CutSuffix(name, "}")
+		if !hasPrefix || !hasSuffix || name == "" {
 			return fmt.Errorf("project %q access.credentials must be an environment reference such as ${GCME_CREDENTIALS}", p.Name)
 		}
 		value, ok := os.LookupEnv(name)
@@ -206,22 +210,6 @@ func (c *Config) resolveCredentials() error {
 		p.Access.Credentials = value
 	}
 	return nil
-}
-
-func environmentReferenceName(value string) (string, bool) {
-	if !strings.HasPrefix(value, "${") || !strings.HasSuffix(value, "}") || len(value) < 4 {
-		return "", false
-	}
-	name := value[2 : len(value)-1]
-	for i := range name {
-		ch := name[i]
-		isLetter := ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z'
-		isDigit := ch >= '0' && ch <= '9'
-		if (i == 0 && !isLetter && ch != '_') || (i > 0 && !isLetter && !isDigit && ch != '_') {
-			return "", false
-		}
-	}
-	return name, true
 }
 
 func hasBillingConfig(b Billing) bool {
@@ -252,12 +240,12 @@ func validateAccess(project string, access Access) error {
 		return nil
 	}
 	impersonation := access.Impersonation
-	if !isServiceAccountEmail(impersonation.TargetServiceAccount) {
-		return fmt.Errorf("project %q access.impersonation.target_service_account must be a service account email", project)
+	if emailValidator.Var(impersonation.TargetServiceAccount, "required,email") != nil {
+		return fmt.Errorf("project %q access.impersonation.target_service_account must be a valid email address", project)
 	}
 	for _, delegate := range impersonation.Delegates {
-		if !isServiceAccountEmail(delegate) {
-			return fmt.Errorf("project %q access.impersonation.delegates must contain service account emails", project)
+		if emailValidator.Var(delegate, "required,email") != nil {
+			return fmt.Errorf("project %q access.impersonation.delegates must contain valid email addresses", project)
 		}
 	}
 	if impersonation.Lifetime == "" {
@@ -268,19 +256,6 @@ func validateAccess(project string, access Access) error {
 		return fmt.Errorf("project %q access.impersonation.lifetime must be greater than zero and at most 1h", project)
 	}
 	return nil
-}
-
-func isServiceAccountEmail(value string) bool {
-	if strings.ContainsAny(value, " \t\r\n") {
-		return false
-	}
-	at := strings.IndexByte(value, '@')
-	if at <= 0 || at != strings.LastIndexByte(value, '@') {
-		return false
-	}
-	const domainSuffix = ".iam.gserviceaccount.com"
-	domain := value[at+1:]
-	return len(domain) > len(domainSuffix) && strings.HasSuffix(domain, domainSuffix)
 }
 
 func (c *Config) Project(name string) (Project, bool) {
