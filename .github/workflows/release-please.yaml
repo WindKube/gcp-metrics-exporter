@@ -1,0 +1,20 @@
+name: Release Please
+on:
+  push:
+    branches: [main]
+permissions: {}
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    permissions: {contents: write, pull-requests: write}
+    outputs: {released: ${{ steps.release.outputs.release_created }}, tag: ${{ steps.release.outputs.tag_name }}}
+    steps:
+      - id: release
+        uses: googleapis/release-please-action@v4
+        with: {release-type: go}
+  image:
+    needs: release
+    if: needs.release.outputs.released == 'true'
+    uses: ./.github/workflows/release-image.yaml
+    permissions: {contents: read, packages: write, id-token: write, attestations: write}
+    with: {tag: ${{ needs.release.outputs.tag }}}
