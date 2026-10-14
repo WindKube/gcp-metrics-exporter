@@ -4,8 +4,23 @@ variable "service_account_project_id" {
 }
 
 variable "target_project_ids" {
-  description = "Projects the exporter inventories. The service account receives Cloud Run Viewer in each one."
+  description = "Projects the exporter inventories. The service account receives Cloud Run Viewer and BigQuery Job User in each one."
   type        = set(string)
+}
+
+variable "billing_query_project_ids" {
+  description = "Additional BigQuery query projects used by billing.query_project. Target projects are included automatically."
+  type        = set(string)
+  default     = []
+}
+
+variable "billing_datasets" {
+  description = "BigQuery datasets containing billing exports that the exporter can read."
+  type = set(object({
+    project_id = string
+    dataset_id = string
+  }))
+  default = []
 }
 
 variable "service_account_id" {

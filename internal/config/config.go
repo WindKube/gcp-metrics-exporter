@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/base64"
 	"fmt"
 	"os"
 	"slices"
@@ -40,11 +41,12 @@ type Temporal struct {
 	TaskQueue string `yaml:"task_queue" json:"task_queue"`
 }
 
-// Billing identifies the BigQuery billing-export table and the project used to
-// run the query. The table must be a fully-qualified BigQuery table name.
+// Billing identifies the BigQuery billing-export dataset and table, and the
+// project used to run the query.
 type Billing struct {
 	QueryProject    string `yaml:"query_project" json:"query_project"`
 	Location        string `yaml:"location" json:"location"`
+	Dataset         string `yaml:"dataset" json:"dataset"`
 	Table           string `yaml:"table" json:"table"`
 	GroupByService  bool   `yaml:"group_by_service" json:"group_by_service"`
 	GroupByCostType bool   `yaml:"group_by_cost_type" json:"group_by_cost_type"`
@@ -72,7 +74,7 @@ type Project struct {
 }
 
 // Access configures the identity used for all Google APIs for one project.
-// Credentials contains resolved credential JSON and is deliberately excluded
+// Credentials contains decoded credential JSON and is deliberately excluded
 // from config show output.
 type Access struct {
 	Credentials   string         `yaml:"credentials" json:"-"`
@@ -139,6 +141,9 @@ func (c *Config) applyDefaults() {
 		if p.Billing == nil && slices.Contains(p.Resources, "billing") && hasBillingConfig(c.Global.Billing) {
 			billing := c.Global.Billing
 			p.Billing = &billing
+		}
+		if p.Billing != nil && p.Billing.QueryProject == "" {
+			p.Billing.QueryProject = p.ID
 		}
 	}
 }
@@ -207,21 +212,25 @@ func (c *Config) resolveCredentials() error {
 		if !ok || strings.TrimSpace(value) == "" {
 			return fmt.Errorf("project %q access.credentials references an unset or empty environment variable", p.Name)
 		}
-		p.Access.Credentials = value
+		credentials, err := base64.StdEncoding.DecodeString(strings.TrimSpace(value))
+		if err != nil {
+			return fmt.Errorf("project %q access.credentials must reference a base64-encoded credential JSON value: %w", p.Name, err)
+		}
+		p.Access.Credentials = string(credentials)
 	}
 	return nil
 }
 
 func hasBillingConfig(b Billing) bool {
-	return strings.TrimSpace(b.QueryProject) != "" || strings.TrimSpace(b.Location) != "" || strings.TrimSpace(b.Table) != ""
+	return strings.TrimSpace(b.QueryProject) != "" || strings.TrimSpace(b.Location) != "" || strings.TrimSpace(b.Dataset) != "" || strings.TrimSpace(b.Table) != ""
 }
 
 func validateBilling(project string, billing *Billing) error {
 	if billing == nil {
 		return fmt.Errorf("project %q billing must be configured when billing is enabled", project)
 	}
-	if strings.TrimSpace(billing.QueryProject) == "" {
-		return fmt.Errorf("project %q billing.query_project must not be empty", project)
+	if strings.TrimSpace(billing.Dataset) == "" {
+		return fmt.Errorf("project %q billing.dataset must not be empty", project)
 	}
 	if strings.TrimSpace(billing.Table) == "" {
 		return fmt.Errorf("project %q billing.table must not be empty", project)
@@ -229,8 +238,8 @@ func validateBilling(project string, billing *Billing) error {
 	if strings.TrimSpace(billing.Location) == "" {
 		return fmt.Errorf("project %q billing.location must not be empty", project)
 	}
-	if err := queries.ValidateTable(billing.Table); err != nil {
-		return fmt.Errorf("project %q billing.table: %w", project, err)
+	if err := queries.ValidateTable(billing.Dataset + "." + billing.Table); err != nil {
+		return fmt.Errorf("project %q billing.dataset or billing.table: %w", project, err)
 	}
 	return nil
 }

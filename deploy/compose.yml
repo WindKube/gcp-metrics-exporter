@@ -3,13 +3,12 @@ services:
     build:
       context: ..
       dockerfile: Dockerfile
-    depends_on:
-      temporal:
-        condition: service_started
-      elasticsearch:
-        condition: service_healthy
     environment:
-      GOOGLE_APPLICATION_CREDENTIALS: /gcp/adc.json
+      GCME_PRODUCTION_CREDENTIALS: ${GCME_PRODUCTION_CREDENTIALS:?Set GCME_PRODUCTION_CREDENTIALS to base64-encoded credential JSON}
+    networks: [gcp-metrics-exporter]
     volumes:
       - ./config.yaml:/app/config.yaml:ro
-      - ${GCME_ADC_FILE:?Set GCME_ADC_FILE to your Application Default Credentials JSON}:/gcp/adc.json:ro
+
+networks:
+  gcp-metrics-exporter:
+    name: gcp-metrics-exporter

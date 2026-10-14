@@ -36,7 +36,7 @@ func NewGoogleRegistry(ctx context.Context, project config.Project) (*Registry, 
 	}
 	billingConfig := *project.Billing
 	query, err := queries.GetBillingData(queries.BillingDataOptions{
-		Table:           billingConfig.Table,
+		Table:           billingConfig.Dataset + "." + billingConfig.Table,
 		GroupByService:  billingConfig.GroupByService,
 		GroupByCostType: billingConfig.GroupByCostType,
 	})

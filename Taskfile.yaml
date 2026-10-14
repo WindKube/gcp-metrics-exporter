@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 env:
   GCME_CONFIG: configs/example.yaml
@@ -22,3 +22,7 @@ tasks:
   schedules:
     cmds:
       - go run . schedule list --config '{{.GCME_CONFIG}}'
+
+  image:
+    cmds:
+      - docker build -t gcp-metrics-exporter:local .
