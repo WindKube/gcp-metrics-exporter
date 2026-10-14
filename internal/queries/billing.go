@@ -1,20 +1,31 @@
 package queries
 
 import (
-	"bytes"
 	_ "embed"
 	"fmt"
-	"regexp"
-	"text/template"
+	"strings"
+
+	"github.com/go-playground/validator/v10"
 )
 
-//go:embed queries/get-billing-data.sql
-var getBillingDataTemplate string
+const tablePlaceholder = "{{TABLE}}"
 
-var fullyQualifiedTable = regexp.MustCompile(`^[A-Za-z0-9_-]+\.[A-Za-z0-9_]+\.[A-Za-z0-9_$-]+$`)
+//go:embed queries/get-billing-data.sql
+var getBillingDataQuery string
+
+//go:embed queries/get-billing-data-service.sql
+var getBillingDataServiceQuery string
+
+//go:embed queries/get-billing-data-cost-type.sql
+var getBillingDataCostTypeQuery string
+
+//go:embed queries/get-billing-data-service-cost-type.sql
+var getBillingDataServiceCostTypeQuery string
+
+var tableValidator = newTableValidator()
 
 type BillingDataOptions struct {
-	Table           string
+	Table           string `validate:"required,bigquery_table"`
 	GroupByService  bool
 	GroupByCostType bool
 }
@@ -22,44 +33,59 @@ type BillingDataOptions struct {
 // ValidateTable verifies a fully-qualified GoogleSQL table or view identifier.
 // Identifiers cannot be supplied as BigQuery query parameters.
 func ValidateTable(table string) error {
-	if !fullyQualifiedTable.MatchString(table) {
+	if err := tableValidator.Struct(BillingDataOptions{Table: table}); err != nil {
 		return fmt.Errorf("billing table must be a fully-qualified project.dataset.table identifier")
 	}
 	return nil
 }
 
-// GetBillingData renders the versioned billing query using only validated table
-// identifiers and code-controlled SQL expressions.
+// GetBillingData selects a versioned query for the requested breakdown. The
+// only SQL substitution is the validated table or view identifier.
 func GetBillingData(options BillingDataOptions) (string, error) {
 	if err := ValidateTable(options.Table); err != nil {
 		return "", err
 	}
-	data := struct {
-		Table              string
-		ServiceExpression  string
-		CostTypeExpression string
-		GroupByService     string
-		GroupByCostType    string
-	}{
-		Table:              options.Table,
-		ServiceExpression:  "'all'",
-		CostTypeExpression: "'all'",
+	return strings.ReplaceAll(selectBillingQuery(options), tablePlaceholder, options.Table), nil
+}
+
+func selectBillingQuery(options BillingDataOptions) string {
+	switch {
+	case options.GroupByService && options.GroupByCostType:
+		return getBillingDataServiceCostTypeQuery
+	case options.GroupByService:
+		return getBillingDataServiceQuery
+	case options.GroupByCostType:
+		return getBillingDataCostTypeQuery
+	default:
+		return getBillingDataQuery
 	}
-	if options.GroupByService {
-		data.ServiceExpression = "COALESCE(service.description, 'unknown')"
-		data.GroupByService = ", service"
+}
+
+func newTableValidator() *validator.Validate {
+	v := validator.New()
+	if err := v.RegisterValidation("bigquery_table", isBigQueryTable); err != nil {
+		panic(fmt.Sprintf("register BigQuery table validator: %v", err))
 	}
-	if options.GroupByCostType {
-		data.CostTypeExpression = "COALESCE(cost_type, 'unknown')"
-		data.GroupByCostType = ", cost_type"
+	return v
+}
+
+func isBigQueryTable(field validator.FieldLevel) bool {
+	parts := strings.Split(field.Field().String(), ".")
+	return len(parts) == 3 && validProjectID(parts[0]) && validDatasetID(parts[1]) && validTableID(parts[2])
+}
+
+func validProjectID(value string) bool { return validIdentifier(value, "-_") }
+func validDatasetID(value string) bool { return validIdentifier(value, "_") }
+func validTableID(value string) bool   { return validIdentifier(value, "_$-") }
+
+func validIdentifier(value, extras string) bool {
+	if value == "" {
+		return false
 	}
-	t, err := template.New("get-billing-data.sql").Option("missingkey=error").Parse(getBillingDataTemplate)
-	if err != nil {
-		return "", fmt.Errorf("parse billing query: %w", err)
+	for _, r := range value {
+		if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || strings.ContainsRune(extras, r)) {
+			return false
+		}
 	}
-	var query bytes.Buffer
-	if err := t.Execute(&query, data); err != nil {
-		return "", fmt.Errorf("render billing query: %w", err)
-	}
-	return query.String(), nil
+	return true
 }
