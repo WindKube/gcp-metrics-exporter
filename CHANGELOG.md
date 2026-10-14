@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.0](https://github.com/WindKube/gcp-metrics-exporter/compare/v1.0.0...v1.1.0) (2026-10-14)
+
+
+### Features
+
+* support per-project billing access ([57ca5b8](https://github.com/WindKube/gcp-metrics-exporter/commit/57ca5b88ecad7ce9f9acc6430bd7855aae51b78e))
+
+
+### Bug Fixes
+
+* document conventional commit requirement ([eaf4e95](https://github.com/WindKube/gcp-metrics-exporter/commit/eaf4e95b516517a0c892a01cb3c2b434cd57e05c))
+* document Conventional Commits (WIN-54) ([6c615b3](https://github.com/WindKube/gcp-metrics-exporter/commit/6c615b3278eda1d640fc28e432847238d78e6b0c))
+
 ## 1.0.0 (2026-10-14)
 
 
