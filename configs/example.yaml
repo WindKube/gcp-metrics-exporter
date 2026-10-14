@@ -7,18 +7,6 @@ global:
     address: localhost:7233
     namespace: default
     task_queue: gcp-metrics-exporter
-  # Enable the billing resource below to query this standard BigQuery billing
-  # export. query_project must have BigQuery Jobs permission and access to table.
-  billing:
-    query_project: billing-project
-    # Must match the BigQuery dataset location (for example, EU or US).
-    location: EU
-    table: billing-project.billing_dataset.gcp_billing_export_v1_ABCDEF_123456
-    # false emits one total per project and invoice month; true emits one per service.
-    group_by_service: false
-    # false combines taxes, adjustments, and regular charges into the total.
-    group_by_cost_type: false
-
 storage:
   elasticsearch:
     addresses: [http://localhost:9200]
@@ -34,3 +22,17 @@ projects:
   - name: production
     id: example-production-project
     # locations, resources, and scrape_schedule inherit from global when omitted.
+    # Each project can query a separate standard BigQuery billing export.
+    billing:
+      query_project: billing-project
+      # Must match the BigQuery dataset location (for example, EU or US).
+      location: EU
+      table: billing-project.billing_dataset.gcp_billing_export_v1_ABCDEF_123456
+      # false emits one total per project and invoice month; true emits one per service.
+      group_by_service: false
+      # false combines taxes, adjustments, and regular charges into the total.
+      group_by_cost_type: false
+    # Omit access to use Application Default Credentials. To use a different
+    # identity, set access.credentials to "${GCME_PRODUCTION_CREDENTIALS}",
+    # where that environment variable contains credential JSON. An optional
+    # access.impersonation.target_service_account can then be used instead.

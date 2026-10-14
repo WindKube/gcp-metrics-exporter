@@ -21,12 +21,12 @@ type Result struct {
 	Count int `json:"count"`
 }
 type Activities struct {
-	registry *collector.Registry
+	provider *collector.Provider
 	store    storage.Store
 }
 
-func New(registry *collector.Registry, store storage.Store) *Activities {
-	return &Activities{registry: registry, store: store}
+func New(provider *collector.Provider, store storage.Store) *Activities {
+	return &Activities{provider: provider, store: store}
 }
 func (a *Activities) GetCloudRunServices(ctx context.Context, req Request) (Result, error) {
 	return a.collect(ctx, collector.CloudRunService, req)
@@ -41,7 +41,11 @@ func (a *Activities) GetBilling(ctx context.Context, req Request) (Result, error
 	return a.collect(ctx, collector.Billing, req)
 }
 func (a *Activities) collect(ctx context.Context, kind string, req Request) (Result, error) {
-	c, err := a.registry.Get(kind)
+	registry, err := a.provider.Get(ctx, req.ProjectName)
+	if err != nil {
+		return Result{}, err
+	}
+	c, err := registry.Get(kind)
 	if err != nil {
 		return Result{}, err
 	}

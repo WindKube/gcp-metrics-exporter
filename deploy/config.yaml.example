@@ -6,13 +6,6 @@ global:
     address: temporal:7233
     namespace: default
     task_queue: gcp-metrics-exporter
-  billing:
-    query_project: billing-project
-    location: EU
-    table: billing-project.billing_dataset.gcp_billing_export_v1_ABCDEF_123456
-    group_by_service: false
-    group_by_cost_type: false
-
 storage:
   elasticsearch:
     addresses: [http://elasticsearch:9200]
@@ -27,3 +20,12 @@ resources:
 projects:
   - name: production
     id: target-project-id
+    billing:
+      query_project: billing-project
+      location: EU
+      table: billing-project.billing_dataset.gcp_billing_export_v1_ABCDEF_123456
+      group_by_service: false
+      group_by_cost_type: false
+    # Omit access to use Application Default Credentials. To use a separate
+    # identity, set access.credentials to "${GCME_PRODUCTION_CREDENTIALS}";
+    # the environment variable holds credential JSON, not a filename.
