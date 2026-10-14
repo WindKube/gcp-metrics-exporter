@@ -1,0 +1,27 @@
+global:
+  scrape_schedule: "0 * * * *"
+  schedule_timezone: UTC
+  locations: [europe-west1]
+  temporal:
+    address: temporal:7233
+    namespace: default
+    task_queue: gcp-metrics-exporter
+  billing:
+    query_project: billing-project
+    table: billing-project.billing_dataset.gcp_billing_export_v1_ABCDEF_123456
+    group_by_service: false
+
+storage:
+  elasticsearch:
+    addresses: [http://elasticsearch:9200]
+    index_prefix: gcp-inventory
+
+resources:
+  - billing
+  - cloud_run_service
+  - cloud_run_revision
+  - cloud_run_worker_pool
+
+projects:
+  - name: production
+    id: target-project-id

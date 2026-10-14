@@ -24,12 +24,21 @@ type Global struct {
 	ScheduleTimezone string   `yaml:"schedule_timezone" json:"schedule_timezone"`
 	Locations        []string `yaml:"locations" json:"locations"`
 	Temporal         Temporal `yaml:"temporal" json:"temporal"`
+	Billing          Billing  `yaml:"billing" json:"billing"`
 }
 
 type Temporal struct {
 	Address   string `yaml:"address" json:"address"`
 	Namespace string `yaml:"namespace" json:"namespace"`
 	TaskQueue string `yaml:"task_queue" json:"task_queue"`
+}
+
+// Billing identifies the BigQuery billing-export table and the project used to
+// run the query. The table must be a fully-qualified BigQuery table name.
+type Billing struct {
+	QueryProject   string `yaml:"query_project" json:"query_project"`
+	Table          string `yaml:"table" json:"table"`
+	GroupByService bool   `yaml:"group_by_service" json:"group_by_service"`
 }
 
 type Storage struct {
@@ -125,6 +134,14 @@ func (c *Config) Validate(knownResources []string) error {
 			}
 		}
 	}
+	if slices.Contains(c.Resources, "billing") || projectUsesResource(c.Projects, "billing") {
+		if strings.TrimSpace(c.Global.Billing.QueryProject) == "" {
+			return fmt.Errorf("global.billing.query_project must not be empty when billing is enabled")
+		}
+		if strings.TrimSpace(c.Global.Billing.Table) == "" {
+			return fmt.Errorf("global.billing.table must not be empty when billing is enabled")
+		}
+	}
 	if len(c.Storage.Elasticsearch.Addresses) == 0 {
 		return fmt.Errorf("storage.elasticsearch.addresses must not be empty")
 	}
@@ -132,6 +149,15 @@ func (c *Config) Validate(knownResources []string) error {
 		return fmt.Errorf("storage.elasticsearch.index_prefix must not be empty")
 	}
 	return nil
+}
+
+func projectUsesResource(projects []Project, resource string) bool {
+	for _, project := range projects {
+		if slices.Contains(project.Resources, resource) {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *Config) Project(name string) (Project, bool) {

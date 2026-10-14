@@ -20,5 +20,6 @@ func NewWorker(c client.Client, cfg config.Temporal, acts *activities.Activities
 	w.RegisterActivityWithOptions(acts.GetCloudRunServices, activity.RegisterOptions{Name: activities.GetCloudRunServicesName})
 	w.RegisterActivityWithOptions(acts.GetCloudRunRevisions, activity.RegisterOptions{Name: activities.GetCloudRunRevisionsName})
 	w.RegisterActivityWithOptions(acts.GetCloudRunWorkerPools, activity.RegisterOptions{Name: activities.GetCloudRunWorkerPoolsName})
+	w.RegisterActivityWithOptions(acts.GetBilling, activity.RegisterOptions{Name: activities.GetBillingName})
 	return w
 }

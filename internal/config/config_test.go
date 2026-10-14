@@ -31,3 +31,23 @@ projects:
 		t.Fatal("locations were not inherited")
 	}
 }
+
+func TestLoadRequiresBillingSettingsWhenBillingIsEnabled(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.yaml")
+	if err := os.WriteFile(path, []byte(`global:
+  locations: [europe-west1]
+resources: [billing]
+storage:
+  elasticsearch:
+    addresses: [http://localhost:9200]
+projects:
+  - name: test
+    id: test-project
+`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, err := Load(path, []string{"billing"})
+	if err == nil || err.Error() != "global.billing.query_project must not be empty when billing is enabled" {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
