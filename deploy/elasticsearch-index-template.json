@@ -24,6 +24,7 @@
           "properties": {
             "billing_month": { "type": "keyword" },
             "service": { "type": "keyword" },
+            "cost_type": { "type": "keyword" },
             "cost": { "type": "double" },
             "currency": { "type": "keyword" }
           }

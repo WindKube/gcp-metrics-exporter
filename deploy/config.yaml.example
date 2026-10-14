@@ -8,8 +8,10 @@ global:
     task_queue: gcp-metrics-exporter
   billing:
     query_project: billing-project
+    location: EU
     table: billing-project.billing_dataset.gcp_billing_export_v1_ABCDEF_123456
     group_by_service: false
+    group_by_cost_type: false
 
 storage:
   elasticsearch:

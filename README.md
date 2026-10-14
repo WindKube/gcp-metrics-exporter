@@ -19,7 +19,9 @@ The process uses Application Default Credentials. For local work run `gcloud aut
 
 ## Billing exports
 
-Add `billing` to `resources` and configure `global.billing` with the fully-qualified standard BigQuery billing-export table and the project that will run the query. The service account needs BigQuery job-user permission on `query_project` and read access to the billing-export table. Each run writes one document per invoice month for the configured target project; set `group_by_service: true` to write a separate document for each GCP service. The query includes the current and preceding invoice month to retain late credits and adjustments.
+Add `billing` to `resources` and configure `global.billing` with the fully-qualified standard BigQuery billing-export table, its BigQuery `location`, and the project that will run the query. The service account needs BigQuery job-user permission on `query_project` and read access to the billing-export table. Each run writes one document per invoice month for the configured target project; set `group_by_service: true` to write a separate document for each GCP service, and `group_by_cost_type: true` to separate regular charges, taxes, adjustments, and rounding. By default those types are included in the project total. The query includes the current and preceding invoice month to retain late credits and adjustments.
+
+The versioned GoogleSQL source is [`internal/queries/queries/get-billing-data.sql`](internal/queries/queries/get-billing-data.sql). It is embedded in the binary at build time, so the Docker image needs no separate runtime mount. The query accepts values only through named parameters; the billing table identifier is validated before being rendered into the query.
 
 ## Local Docker Compose
 

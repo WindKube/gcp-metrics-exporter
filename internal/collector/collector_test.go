@@ -1,10 +1,8 @@
 package collector
 
 import (
-	"strings"
 	"testing"
-
-	"github.com/windkube/gcp-metrics-exporter/internal/config"
+	"time"
 )
 
 func TestRegistryTypes(t *testing.T) {
@@ -14,14 +12,15 @@ func TestRegistryTypes(t *testing.T) {
 	}
 }
 
-func TestBillingQueryGroupsByServiceOnlyWhenRequested(t *testing.T) {
-	base := config.Billing{Table: "billing-project.dataset.export"}
-	query := billingQuery(base)
-	if !strings.Contains(query, "'all' AS service") || strings.Contains(query, "GROUP BY billing_month, service") {
-		t.Fatalf("project-total query has unexpected grouping: %s", query)
+func TestInvoiceMonthStartIncludesPreviousInvoiceMonth(t *testing.T) {
+	if got := invoiceMonthStart(time.Date(2026, time.January, 14, 0, 0, 0, 0, time.UTC)); got != "202512" {
+		t.Fatalf("invoice month start = %q, want 202512", got)
 	}
-	query = billingQuery(config.Billing{Table: base.Table, GroupByService: true})
-	if !strings.Contains(query, "COALESCE(service.description, 'unknown')") || !strings.Contains(query, "GROUP BY billing_month, service") {
-		t.Fatalf("service query has unexpected grouping: %s", query)
+}
+
+func TestBillingEntryIDIncludesAllDimensions(t *testing.T) {
+	entry := BillingEntry{BillingMonth: "202610", Service: "Compute Engine", CostType: "regular", Currency: "USD"}
+	if got, want := entry.ID(), "202610:Compute Engine:regular:USD"; got != want {
+		t.Fatalf("ID = %q, want %q", got, want)
 	}
 }

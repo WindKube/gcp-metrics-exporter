@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/robfig/cron/v3"
+	"github.com/windkube/gcp-metrics-exporter/internal/queries"
 	"gopkg.in/yaml.v3"
 )
 
@@ -36,9 +37,11 @@ type Temporal struct {
 // Billing identifies the BigQuery billing-export table and the project used to
 // run the query. The table must be a fully-qualified BigQuery table name.
 type Billing struct {
-	QueryProject   string `yaml:"query_project" json:"query_project"`
-	Table          string `yaml:"table" json:"table"`
-	GroupByService bool   `yaml:"group_by_service" json:"group_by_service"`
+	QueryProject    string `yaml:"query_project" json:"query_project"`
+	Location        string `yaml:"location" json:"location"`
+	Table           string `yaml:"table" json:"table"`
+	GroupByService  bool   `yaml:"group_by_service" json:"group_by_service"`
+	GroupByCostType bool   `yaml:"group_by_cost_type" json:"group_by_cost_type"`
 }
 
 type Storage struct {
@@ -140,6 +143,12 @@ func (c *Config) Validate(knownResources []string) error {
 		}
 		if strings.TrimSpace(c.Global.Billing.Table) == "" {
 			return fmt.Errorf("global.billing.table must not be empty when billing is enabled")
+		}
+		if strings.TrimSpace(c.Global.Billing.Location) == "" {
+			return fmt.Errorf("global.billing.location must not be empty when billing is enabled")
+		}
+		if err := queries.ValidateTable(c.Global.Billing.Table); err != nil {
+			return fmt.Errorf("global.billing.table: %w", err)
 		}
 	}
 	if len(c.Storage.Elasticsearch.Addresses) == 0 {
