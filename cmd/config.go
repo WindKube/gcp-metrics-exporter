@@ -28,6 +28,6 @@ var configShowCmd = &cobra.Command{Use: "show", RunE: func(cmd *cobra.Command, _
 	fmt.Fprintln(cmd.OutOrStdout(), string(b))
 	return nil
 }}
-var knownResources = []string{"cloud_run_service", "cloud_run_revision", "cloud_run_worker_pool"}
+var knownResources = []string{"billing", "cloud_run_service", "cloud_run_revision", "cloud_run_worker_pool"}
 
 func init() { configCmd.AddCommand(configValidateCmd, configShowCmd) }

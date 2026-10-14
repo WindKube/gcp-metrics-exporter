@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/windkube/gcp-metrics-exporter/internal/collector"
@@ -12,6 +13,7 @@ const (
 	GetCloudRunServicesName    = "GetCloudRunServices"
 	GetCloudRunRevisionsName   = "GetCloudRunRevisions"
 	GetCloudRunWorkerPoolsName = "GetCloudRunWorkerPools"
+	GetBillingName             = "GetBilling"
 )
 
 type Request struct{ ProjectID, ProjectName, Location string }
@@ -35,6 +37,9 @@ func (a *Activities) GetCloudRunRevisions(ctx context.Context, req Request) (Res
 func (a *Activities) GetCloudRunWorkerPools(ctx context.Context, req Request) (Result, error) {
 	return a.collect(ctx, collector.CloudRunWorkerPool, req)
 }
+func (a *Activities) GetBilling(ctx context.Context, req Request) (Result, error) {
+	return a.collect(ctx, collector.Billing, req)
+}
 func (a *Activities) collect(ctx context.Context, kind string, req Request) (Result, error) {
 	c, err := a.registry.Get(kind)
 	if err != nil {
@@ -43,9 +48,13 @@ func (a *Activities) collect(ctx context.Context, kind string, req Request) (Res
 	now := time.Now().UTC()
 	docs := make([]storage.Document, 0)
 	err = c.Collect(ctx, req.ProjectID, req.Location, func(r collector.Resource) error {
-		d := storage.Document{ID: req.ProjectID + ":" + req.Location + ":" + kind + ":" + r.ID, Timestamp: now, GCP: r.Data}
+		location := req.Location
+		if location == "" {
+			location = "global"
+		}
+		d := storage.Document{ID: fmt.Sprintf("%s:%s:%s:%s", req.ProjectID, location, kind, r.ID), Timestamp: now, GCP: r.Data}
 		d.Resource.Type, d.Resource.ID, d.Resource.Name = kind, r.ID, r.Name
-		d.Cloud.Provider, d.Cloud.Project, d.Cloud.Location = "gcp", req.ProjectID, req.Location
+		d.Cloud.Provider, d.Cloud.Project, d.Cloud.Location = "gcp", req.ProjectID, location
 		docs = append(docs, d)
 		return nil
 	})

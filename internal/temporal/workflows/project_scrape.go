@@ -17,12 +17,23 @@ type ProjectScrapeInput struct {
 
 func ProjectScrape(ctx workflow.Context, in ProjectScrapeInput) error {
 	ctx = workflow.WithActivityOptions(ctx, workflow.ActivityOptions{StartToCloseTimeout: 10 * time.Minute})
+	for _, resource := range in.Resources {
+		if resource == "billing" {
+			request := activities.Request{ProjectID: in.ProjectID, ProjectName: in.ProjectName}
+			var result activities.Result
+			if err := workflow.ExecuteActivity(ctx, activities.GetBillingName, request).Get(ctx, &result); err != nil {
+				return err
+			}
+		}
+	}
 	for _, location := range in.Locations {
 		request := activities.Request{ProjectID: in.ProjectID, ProjectName: in.ProjectName, Location: location}
 		for _, resource := range in.Resources {
 			var result activities.Result
 			var name string
 			switch resource {
+			case "billing":
+				continue
 			case "cloud_run_service":
 				name = activities.GetCloudRunServicesName
 			case "cloud_run_revision":

@@ -18,7 +18,7 @@ var workerCmd = &cobra.Command{Use: "worker", Short: "Run the Temporal worker an
 	if err != nil {
 		return err
 	}
-	registry, err := collector.NewCloudRunRegistry(ctx)
+	registry, err := collector.NewGoogleRegistry(ctx, cfg.Global.Billing)
 	if err != nil {
 		return err
 	}
