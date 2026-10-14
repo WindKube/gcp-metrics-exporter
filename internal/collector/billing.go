@@ -22,14 +22,19 @@ type billing struct {
 
 // NewGoogleRegistry constructs collectors for all configured Google APIs. A
 // BigQuery client is only created when billing collection is configured.
-func NewGoogleRegistry(ctx context.Context, billingConfig config.Billing) (*Registry, error) {
-	runRegistry, err := NewCloudRunRegistry(ctx)
+func NewGoogleRegistry(ctx context.Context, project config.Project) (*Registry, error) {
+	opts, err := clientOptions(ctx, project.Access)
 	if err != nil {
 		return nil, err
 	}
-	if billingConfig.Table == "" {
+	runRegistry, err := NewCloudRunRegistry(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
+	if project.Billing == nil {
 		return runRegistry, nil
 	}
+	billingConfig := *project.Billing
 	query, err := queries.GetBillingData(queries.BillingDataOptions{
 		Table:           billingConfig.Table,
 		GroupByService:  billingConfig.GroupByService,
@@ -38,7 +43,7 @@ func NewGoogleRegistry(ctx context.Context, billingConfig config.Billing) (*Regi
 	if err != nil {
 		return nil, err
 	}
-	client, err := bigquery.NewClient(ctx, billingConfig.QueryProject)
+	client, err := bigquery.NewClient(ctx, billingConfig.QueryProject, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("create BigQuery client: %w", err)
 	}

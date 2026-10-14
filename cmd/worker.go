@@ -18,17 +18,13 @@ var workerCmd = &cobra.Command{Use: "worker", Short: "Run the Temporal worker an
 	if err != nil {
 		return err
 	}
-	registry, err := collector.NewGoogleRegistry(ctx, cfg.Global.Billing)
-	if err != nil {
-		return err
-	}
 	store := storage.New(cfg.Storage.Elasticsearch)
 	temporal, err := temporalclient.NewClient(cfg.Global.Temporal)
 	if err != nil {
 		return err
 	}
 	defer temporal.Close()
-	w := temporalclient.NewWorker(temporal, cfg.Global.Temporal, activities.New(registry, store))
+	w := temporalclient.NewWorker(temporal, cfg.Global.Temporal, activities.New(collector.NewProvider(cfg.Projects), store))
 	if err := w.Start(); err != nil {
 		return err
 	}

@@ -55,3 +55,9 @@ projects:
 
 When adding collectors, extend the role assignment or replace it with a custom
 role containing the new API permissions before enabling the collector.
+
+For billing collection, grant the exporter identity (or the impersonated target
+identity) BigQuery Job User on each configured `projects[].billing.query_project`
+and read access to that project's billing-export table. When using
+`projects[].access.impersonation`, grant the base identity Service Account Token
+Creator on the target service account and on every delegate hop.

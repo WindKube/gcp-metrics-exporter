@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 
+	"google.golang.org/api/option"
 	"google.golang.org/api/run/v2"
 )
 
@@ -55,8 +56,8 @@ type cloudRun struct {
 	kind string
 }
 
-func NewCloudRunRegistry(ctx context.Context) (*Registry, error) {
-	api, err := run.NewService(ctx)
+func NewCloudRunRegistry(ctx context.Context, opts ...option.ClientOption) (*Registry, error) {
+	api, err := run.NewService(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
