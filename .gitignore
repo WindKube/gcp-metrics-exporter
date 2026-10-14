@@ -39,3 +39,5 @@ go.work.sum
 gcp-metrics-exporter.json
 
 bin/
+
+deploy/config.yaml

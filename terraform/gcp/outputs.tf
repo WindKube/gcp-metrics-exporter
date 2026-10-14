@@ -9,7 +9,7 @@ output "service_account_member" {
 }
 
 output "service_account_key" {
-  description = "Service account credential JSON to provide to the exporter."
-  value       = base64decode(google_service_account_key.exporter.private_key)
+  description = "Base64-encoded service account credential JSON to provide to the exporter."
+  value       = google_service_account_key.exporter.private_key
   sensitive   = true
 }

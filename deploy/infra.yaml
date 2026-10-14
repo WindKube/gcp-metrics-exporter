@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
+    networks: [gcp-metrics-exporter]
     environment:
       POSTGRES_PASSWORD: temporal
       POSTGRES_USER: temporal
@@ -13,24 +14,39 @@ services:
     volumes: [postgres-data:/var/lib/postgresql/data]
 
   temporal:
-    image: temporalio/auto-setup:1.26.2
+    image: temporalio/auto-setup:1.29.7
+    networks: [gcp-metrics-exporter]
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      DB: postgresql
+      DB: postgres12
       DB_PORT: 5432
       POSTGRES_SEEDS: postgres
       POSTGRES_USER: temporal
       POSTGRES_PWD: temporal
     ports: ["7233:7233"]
 
+  temporal-ui:
+    image: temporalio/ui:2.56.0
+    networks: [gcp-metrics-exporter]
+    depends_on:
+      temporal:
+        condition: service_started
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+    ports: ["8080:8080"]
+
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.5.5
+    networks: [gcp-metrics-exporter]
     environment:
       discovery.type: single-node
       xpack.security.enabled: "false"
       ES_JAVA_OPTS: -Xms512m -Xmx512m
+      cluster.routing.allocation.disk.watermark.low: 99%
+      cluster.routing.allocation.disk.watermark.high: 99%
+      cluster.routing.allocation.disk.watermark.flood_stage: 99%
     ports: ["9200:9200"]
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health"]
@@ -42,3 +58,7 @@ services:
 volumes:
   postgres-data:
   elasticsearch-data:
+
+networks:
+  gcp-metrics-exporter:
+    name: gcp-metrics-exporter

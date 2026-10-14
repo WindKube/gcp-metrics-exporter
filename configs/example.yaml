@@ -24,10 +24,12 @@ projects:
     # locations, resources, and scrape_schedule inherit from global when omitted.
     # Each project can query a separate standard BigQuery billing export.
     billing:
-      query_project: billing-project
+      # Optional; defaults to this project's id.
+      # query_project: billing-query-project
       # Must match the BigQuery dataset location (for example, EU or US).
       location: EU
-      table: billing-project.billing_dataset.gcp_billing_export_v1_ABCDEF_123456
+      dataset: billing-project.billing_dataset
+      table: gcp_billing_export_v1_ABCDEF_123456
       # false emits one total per project and invoice month; true emits one per service.
       group_by_service: false
       # false combines taxes, adjustments, and regular charges into the total.
@@ -35,7 +37,7 @@ projects:
     access:
       # Leave credentials unset to use Application Default Credentials. To use
       # a different identity, uncomment the exact environment reference below;
-      # the environment value must be credential JSON, not a filename.
+      # the environment value must be base64-encoded credential JSON.
       # credentials: "${GCME_PRODUCTION_CREDENTIALS}"
       # impersonation:
       #   target_service_account: exporter-reader@example-production-project.iam.gserviceaccount.com

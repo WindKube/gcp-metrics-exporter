@@ -21,16 +21,18 @@ projects:
   - name: production
     id: target-project-id
     billing:
-      query_project: billing-project
+      # Optional; defaults to target-project-id.
+      # query_project: billing-query-project
       location: EU
-      table: billing-project.billing_dataset.gcp_billing_export_v1_ABCDEF_123456
+      dataset: billing-project.billing_dataset
+      table: gcp_billing_export_v1_ABCDEF_123456
       group_by_service: false
       group_by_cost_type: false
     access:
       # Leave credentials unset to use Application Default Credentials. To use
       # a separate identity, uncomment the exact environment reference below;
-      # the environment value must be credential JSON, not a filename.
-      # credentials: "${GCME_PRODUCTION_CREDENTIALS}"
+      # the environment value must be base64-encoded credential JSON.
+      credentials: "${GCME_PRODUCTION_CREDENTIALS}"
       # impersonation:
       #   target_service_account: exporter-reader@target-project-id.iam.gserviceaccount.com
       #   delegates: []

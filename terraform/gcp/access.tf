@@ -19,3 +19,20 @@ resource "google_project_iam_member" "cloud_run_viewer" {
   role    = "roles/run.viewer"
   member  = "serviceAccount:${google_service_account.exporter.email}"
 }
+
+resource "google_project_iam_member" "bigquery_job_user" {
+  for_each = setunion(var.target_project_ids, var.billing_query_project_ids)
+
+  project = each.value
+  role    = "roles/bigquery.jobUser"
+  member  = "serviceAccount:${google_service_account.exporter.email}"
+}
+
+resource "google_bigquery_dataset_iam_member" "billing_data_viewer" {
+  for_each = var.billing_datasets
+
+  project    = each.value.project_id
+  dataset_id = each.value.dataset_id
+  role       = "roles/bigquery.dataViewer"
+  member     = "serviceAccount:${google_service_account.exporter.email}"
+}
