@@ -1,8 +1,8 @@
 # Elasticsearch index template
 
 Creates the index template for documents written by GCP Metrics Exporter. The
-mapping is defined in `index_template.tf`, alongside the Terraform resource, so
-this module is the single source of truth.
+mapping is stored as JSON in `index-mapping.json`; Terraform supplies the
+template name, index pattern, and priority.
 
 The default template applies to `gcp-inventory-*`, which matches the example
 configuration's `storage.elasticsearch.index_prefix`. If a different prefix is
